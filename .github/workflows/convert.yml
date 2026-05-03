@@ -1,0 +1,30 @@
+name: Convert ONNX to CoreML
+on: [push]
+jobs:
+  convert:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install coremltools onnx
+      - name: Run conversion
+        run: |
+          python - <<EOF
+          import coremltools as ct
+          import onnx
+          mlmodel = ct.convert(
+              'yolop-640-640.onnx',
+              minimum_deployment_target=ct.target.iOS15,
+              inputs=[ct.ImageType(name="input", shape=(1, 3, 640, 640), scale=1/255.0)]
+          )
+          mlmodel.save('YOLOP.mlpackage')
+          EOF
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: coreml-model
+          path: YOLOP.mlpackage
